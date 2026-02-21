@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Calendar, Users, ArrowRight, Search } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-const allHackathons = [
+const hardcodedHackathons = [
   { id: "1", name: "CodeSprint 2026", date: "Mar 15-16, 2026", teams: 42, status: "Open", theme: "FinTech", desc: "Build the future of finance in 24 hours." },
   { id: "2", name: "HackVerse", date: "Apr 5-6, 2026", teams: 78, status: "Open", theme: "HealthTech", desc: "Innovate healthcare solutions with cutting-edge tech." },
   { id: "3", name: "BuildTheWeb", date: "May 20-21, 2026", teams: 120, status: "Coming Soon", theme: "EdTech", desc: "Reimagine education for the digital age." },
@@ -13,8 +13,19 @@ const allHackathons = [
 
 export default function Hackathons() {
   const [search, setSearch] = useState("");
+  const [allHackathons, setAllHackathons] = useState(hardcodedHackathons);
+
+  useEffect(() => {
+    // Load admin-created hackathons from localStorage
+    const savedHackathons = JSON.parse(localStorage.getItem("global_hackathons") || "[]");
+    
+    // Combine them: New ones first, then hardcoded ones
+    setAllHackathons([...savedHackathons, ...hardcodedHackathons]);
+  }, []);
+
   const filtered = allHackathons.filter((h) =>
-    h.name.toLowerCase().includes(search.toLowerCase()) || h.theme.toLowerCase().includes(search.toLowerCase())
+    h.name.toLowerCase().includes(search.toLowerCase()) || 
+    h.theme.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -51,7 +62,7 @@ export default function Hackathons() {
                   </span>
                 </div>
                 <h3 className="mb-1 font-display text-lg font-semibold">{h.name}</h3>
-                <p className="mb-4 text-sm text-muted-foreground">{h.desc}</p>
+                <p className="mb-4 text-sm text-muted-foreground line-clamp-2">{h.desc}</p>
                 <div className="mb-4 space-y-1 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {h.date}</div>
                   <div className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> {h.teams} teams</div>
@@ -62,6 +73,12 @@ export default function Hackathons() {
               </motion.div>
             ))}
           </div>
+
+          {filtered.length === 0 && (
+            <div className="mt-12 text-center text-muted-foreground">
+              No hackathons found matching "{search}"
+            </div>
+          )}
         </motion.div>
       </div>
     </div>

@@ -38,9 +38,30 @@ export default function AddHackathon() {
       toast({ title: "Please fill required fields", variant: "destructive" });
       return;
     }
-    const newId = crypto.randomUUID().slice(0, 8);
+
+    // Format the date for the display card
+    const dateRange = `${new Date(form.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(form.endDate).toLocaleDateString('en-US', { day: 'numeric', year: 'numeric' })}`;
+
+    // Create the new hackathon object
+    const newHackathon = {
+      id: crypto.randomUUID().slice(0, 8),
+      name: form.name,
+      date: dateRange,
+      teams: 0,
+      status: "Open",
+      theme: "General", // Default theme as it's not in your current input fields
+      desc: form.description || "No description provided.",
+      ...form // Spreading the rest of your original fields for admin-side storage
+    };
+
+    // Save to localStorage so Hackathons.tsx can see it
+    const existing = JSON.parse(localStorage.getItem("global_hackathons") || "[]");
+    localStorage.setItem("global_hackathons", JSON.stringify([newHackathon, ...existing]));
+
     toast({ title: "Hackathon created!", description: form.name });
-    navigate(`/admin/hackathon/${newId}`);
+    
+    // Navigate to the public hackathons page to see the result
+    navigate("/hackathons");
   };
 
   return (
