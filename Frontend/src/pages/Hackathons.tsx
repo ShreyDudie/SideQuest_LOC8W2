@@ -1,31 +1,28 @@
+// =============================================================================
+// Hackathons.tsx — Public hackathon listing page
+// Shows all hackathons from localStorage. Students can browse and join.
+// =============================================================================
+
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Calendar, Users, ArrowRight, Search } from "lucide-react";
 import { useState, useEffect } from "react";
-
-const hardcodedHackathons = [
-  { id: "1", name: "CodeSprint 2026", date: "Mar 15-16, 2026", teams: 42, status: "Open", theme: "FinTech", desc: "Build the future of finance in 24 hours." },
-  { id: "2", name: "HackVerse", date: "Apr 5-6, 2026", teams: 78, status: "Open", theme: "HealthTech", desc: "Innovate healthcare solutions with cutting-edge tech." },
-  { id: "3", name: "BuildTheWeb", date: "May 20-21, 2026", teams: 120, status: "Coming Soon", theme: "EdTech", desc: "Reimagine education for the digital age." },
-  { id: "4", name: "AI Summit Hack", date: "Jun 1-2, 2026", teams: 0, status: "Coming Soon", theme: "AI/ML", desc: "Push the boundaries of artificial intelligence." },
-  { id: "5", name: "GreenHack", date: "Jul 10-11, 2026", teams: 0, status: "Coming Soon", theme: "Climate", desc: "Hack for a sustainable future." },
-];
+import { getHackathons, getRegistrations, type Hackathon } from "@/lib/storage";
 
 export default function Hackathons() {
   const [search, setSearch] = useState("");
-  const [allHackathons, setAllHackathons] = useState(hardcodedHackathons);
+  const [allHackathons, setAllHackathons] = useState<Hackathon[]>([]);
 
+  // Load hackathons from localStorage
   useEffect(() => {
-    // Load admin-created hackathons from localStorage
-    const savedHackathons = JSON.parse(localStorage.getItem("global_hackathons") || "[]");
-    
-    // Combine them: New ones first, then hardcoded ones
-    setAllHackathons([...savedHackathons, ...hardcodedHackathons]);
+    const loaded = getHackathons();
+    setAllHackathons(loaded);
   }, []);
 
+  // Filter by search (name or theme)
   const filtered = allHackathons.filter((h) =>
-    h.name.toLowerCase().includes(search.toLowerCase()) || 
-    h.theme.toLowerCase().includes(search.toLowerCase())
+    h.name.toLowerCase().includes(search.toLowerCase()) ||
+    (h.theme || "").toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -46,35 +43,61 @@ export default function Hackathons() {
             />
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((h, i) => (
-              <motion.div
-                key={h.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="glass-card-hover flex flex-col p-6"
-              >
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="text-xs font-medium text-primary">{h.theme}</span>
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${h.status === "Open" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
-                    {h.status}
-                  </span>
-                </div>
-                <h3 className="mb-1 font-display text-lg font-semibold">{h.name}</h3>
-                <p className="mb-4 text-sm text-muted-foreground line-clamp-2">{h.desc}</p>
-                <div className="mb-4 space-y-1 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {h.date}</div>
-                  <div className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> {h.teams} teams</div>
-                </div>
-                <Link to="/role-select" className="mt-auto flex items-center justify-center gap-1.5 rounded-lg border border-primary/30 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/10">
-                  Join Now <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-              </motion.div>
-            ))}
-          </div>
+          {allHackathons.length === 0 ? (
+            <div className="mt-12 text-center text-muted-foreground">
+              <p className="text-lg font-semibold mb-2">No hackathons available yet</p>
+              <p className="text-sm">Check back later — admins will create events soon.</p>
+            </div>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((h, i) => {
+                const regs = getRegistrations(h.id);
+                const teamCount = regs.length || h.teams || 0;
 
-          {filtered.length === 0 && (
+                return (
+                  <motion.div
+                    key={h.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="glass-card-hover flex flex-col p-6"
+                  >
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="text-xs font-medium text-primary">{h.theme || "General"}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${h.status === "Open" || h.status === "Ongoing"
+                          ? "bg-success/10 text-success"
+                          : "bg-muted text-muted-foreground"
+                        }`}>
+                        {h.status}
+                      </span>
+                    </div>
+                    <h3 className="mb-1 font-display text-lg font-semibold">{h.name}</h3>
+                    <p className="mb-4 text-sm text-muted-foreground line-clamp-2">
+                      {h.desc || h.description || "No description"}
+                    </p>
+                    <div className="mb-4 space-y-1 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5" />
+                        {h.date || `${h.startDate} — ${h.endDate}`}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Users className="h-3.5 w-3.5" />
+                        {teamCount} teams
+                      </div>
+                    </div>
+                    <Link
+                      to="/role-select"
+                      className="mt-auto flex items-center justify-center gap-1.5 rounded-lg border border-primary/30 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
+                    >
+                      Join Now <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+
+          {filtered.length === 0 && allHackathons.length > 0 && (
             <div className="mt-12 text-center text-muted-foreground">
               No hackathons found matching "{search}"
             </div>

@@ -1,3 +1,8 @@
+// =============================================================================
+// AddHackathon.tsx — Admin create hackathon form
+// Saves to localStorage via storage.ts with proper Hackathon shape.
+// =============================================================================
+
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { LayoutDashboard, Trophy, Bell, HelpCircle, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
@@ -8,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
+import { createHackathon, type Hackathon } from "@/lib/storage";
 
 const sidebarItems = [
   { to: "/admin", label: "Hackathons", icon: LayoutDashboard },
@@ -26,7 +32,7 @@ export default function AddHackathon() {
     registrationDeadline: "",
     minTeamSize: "2",
     maxTeamSize: "5",
-    rounds: "3",
+    theme: "General",
     rules: "",
   });
 
@@ -39,29 +45,34 @@ export default function AddHackathon() {
       return;
     }
 
-    // Format the date for the display card
-    const dateRange = `${new Date(form.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(form.endDate).toLocaleDateString('en-US', { day: 'numeric', year: 'numeric' })}`;
+    // Build display date string
+    const dateRange = `${new Date(form.startDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })} - ${new Date(form.endDate).toLocaleDateString("en-US", { day: "numeric", year: "numeric" })}`;
 
-    // Create the new hackathon object
-    const newHackathon = {
+    // Create full hackathon object
+    const newHackathon: Hackathon = {
       id: crypto.randomUUID().slice(0, 8),
       name: form.name,
+      description: form.description,
+      startDate: form.startDate,
+      endDate: form.endDate,
+      registrationDeadline: form.registrationDeadline,
+      minTeamSize: form.minTeamSize,
+      maxTeamSize: form.maxTeamSize,
+      rounds: [],
+      status: "Open",
+      theme: form.theme,
       date: dateRange,
       teams: 0,
-      status: "Open",
-      theme: "General", // Default theme as it's not in your current input fields
       desc: form.description || "No description provided.",
-      ...form // Spreading the rest of your original fields for admin-side storage
+      rules: form.rules,
+      criteria: [],
+      aiWeight: 50,
     };
 
-    // Save to localStorage so Hackathons.tsx can see it
-    const existing = JSON.parse(localStorage.getItem("global_hackathons") || "[]");
-    localStorage.setItem("global_hackathons", JSON.stringify([newHackathon, ...existing]));
-
+    // Save via storage layer
+    createHackathon(newHackathon);
     toast({ title: "Hackathon created!", description: form.name });
-    
-    // Navigate to the public hackathons page to see the result
-    navigate("/hackathons");
+    navigate("/admin");
   };
 
   return (
@@ -84,6 +95,10 @@ export default function AddHackathon() {
                 <Label>Description</Label>
                 <Textarea className="mt-1.5" rows={3} value={form.description} onChange={(e) => update("description", e.target.value)} placeholder="Brief description..." />
               </div>
+              <div>
+                <Label>Theme</Label>
+                <Input className="mt-1.5" value={form.theme} onChange={(e) => update("theme", e.target.value)} placeholder="e.g. FinTech, HealthTech" />
+              </div>
               <div className="grid gap-4 sm:grid-cols-3">
                 <div>
                   <Label>Start Date *</Label>
@@ -98,7 +113,7 @@ export default function AddHackathon() {
                   <Input className="mt-1.5" type="date" value={form.registrationDeadline} onChange={(e) => update("registrationDeadline", e.target.value)} />
                 </div>
               </div>
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <Label>Min Team Size</Label>
                   <Input className="mt-1.5" type="number" min={1} value={form.minTeamSize} onChange={(e) => update("minTeamSize", e.target.value)} />
@@ -107,18 +122,10 @@ export default function AddHackathon() {
                   <Label>Max Team Size</Label>
                   <Input className="mt-1.5" type="number" min={1} value={form.maxTeamSize} onChange={(e) => update("maxTeamSize", e.target.value)} />
                 </div>
-                <div>
-                  <Label>Number of Rounds</Label>
-                  <Input className="mt-1.5" type="number" min={1} value={form.rounds} onChange={(e) => update("rounds", e.target.value)} />
-                </div>
               </div>
               <div>
                 <Label>Rules & Guidelines</Label>
-                <Textarea className="mt-1.5" rows={5} value={form.rules} onChange={(e) => update("rules", e.target.value)} placeholder="Enter rules and guidelines..." />
-              </div>
-              <div>
-                <Label>Poster Upload</Label>
-                <Input className="mt-1.5" type="file" accept="image/*" />
+                <Textarea className="mt-1.5" rows={4} value={form.rules} onChange={(e) => update("rules", e.target.value)} placeholder="Enter rules and guidelines..." />
               </div>
             </div>
 

@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Navbar from "@/components/Navbar";
+
+// ── Page imports ──
 import Index from "./pages/Index";
 import RoleSelect from "./pages/RoleSelect";
 import Auth from "./pages/Auth";
@@ -20,6 +22,12 @@ import PPTUpload from "./pages/PPTUpload";
 import Helpline from "./pages/Helpline";
 import NotFound from "./pages/NotFound";
 
+// ── Student sub-pages ──
+import GitHubRepo from "./pages/student/GitHubRepo";
+import MyQR from "./pages/student/MyQR";
+import Notifications from "./pages/student/Notifications";
+import FaceVerify from "./pages/student/FaceVerify";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -31,12 +39,15 @@ const App = () => (
         <BrowserRouter>
           <Navbar />
           <Routes>
+            {/* ── Public Routes ── */}
             <Route path="/" element={<Index />} />
             <Route path="/role-select" element={<RoleSelect />} />
             <Route path="/auth/login" element={<Auth />} />
             <Route path="/auth/signup" element={<Auth />} />
             <Route path="/hackathons" element={<Hackathons />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
+
+            {/* ── Student Routes ── */}
             <Route
               path="/student"
               element={
@@ -54,6 +65,40 @@ const App = () => (
               }
             />
             <Route
+              path="/student/github"
+              element={
+                <ProtectedRoute allowedRoles={["student"]}>
+                  <GitHubRepo />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/qr"
+              element={
+                <ProtectedRoute allowedRoles={["student"]}>
+                  <MyQR />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/notifications"
+              element={
+                <ProtectedRoute allowedRoles={["student"]}>
+                  <Notifications />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/verify"
+              element={
+                <ProtectedRoute allowedRoles={["student"]}>
+                  <FaceVerify />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ── Judge Routes ── */}
+            <Route
               path="/judge"
               element={
                 <ProtectedRoute allowedRoles={["judge"]}>
@@ -61,6 +106,8 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+
+            {/* ── Admin Routes ── */}
             <Route
               path="/admin"
               element={
@@ -85,6 +132,8 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+
+            {/* ── Shared Routes ── */}
             <Route
               path="/helpline"
               element={
@@ -93,6 +142,8 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+
+            {/* ── 404 ── */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
